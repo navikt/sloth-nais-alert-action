@@ -1,0 +1,24 @@
+name: Sloth Action
+
+on: [push]
+
+jobs:
+  generate:
+    name: Generate Sloth Output
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Generate Sloth Output
+        uses: ./
+        with:
+          input-file: ./test.yml
+          output-file: output.yaml
+          team: dab
+          name: veilarbaktivitet-alarm
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: ./output.yaml

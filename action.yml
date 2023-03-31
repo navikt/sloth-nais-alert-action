@@ -1,0 +1,46 @@
+name: Download and Generate Sloth Output
+
+description: This action downloads the Sloth binary and generates an output YAML file using it, then adds the contents of another file to the beginning of the output and writes it to a file.
+
+inputs:
+  input-file:
+    description: 'The path to the input YAML file.'
+    required: true
+  output-file:
+    description: 'The path to write the generated YAML output to.'
+    required: true
+  name:
+    description: 'name of the alert resource'
+    required: true
+  team:
+    description: 'team name and namespace'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download Sloth
+      shell: bash
+      run: |
+        wget https://github.com/slok/sloth/releases/download/v0.11.0/sloth-linux-amd64
+        chmod +x sloth-linux-amd64
+    - name: Add start of file
+      shell: bash
+      run: |
+        echo "
+        apiVersion: monitoring.coreos.com/v1
+        kind: PrometheusRule
+        metadata:
+          name: ${{ inputs.name }}
+          namespace: ${{ inputs.team }}
+        labels:
+          team: ${{ inputs.team }}
+        spec:
+        " > ${{ inputs.output-file }}
+    - name: Generate Output
+      shell: bash
+      run: >
+        ./sloth-linux-amd64 generate -i ${{ inputs.input-file }} 
+        | awk '!/^[[:space:]]*---[[:space:]]*$/' 
+        | awk '{print "  " $0}' 
+        >> ${{ inputs.output-file }}
